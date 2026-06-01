@@ -1,0 +1,92 @@
+name: lab14-stack-lemp # Globalna stabilna nazwa projektu (Dobra praktyka V2)
+
+services:
+
+  nginx:
+    image: nginx:1.25.4-alpine
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "4001:80" # Wystawienie portu 4001 na świat zewnętrzny
+    volumes:
+      - ./src:/var/www/html:ro # Kod źródłowy jako powiązanie (tylko do odczytu)
+      - ./config/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro # Konfiguracja routingu
+    depends_on:
+      - php # Nginx czeka na pełne uruchomienie interpretera PHP-FPM
+    networks:
+      - frontend
+      - backend
+
+  php:
+    image: php:8.3-fpm-alpine
+    container_name: php
+    restart: unless-stopped
+    expose:
+      - "9000" # Izolacja portu 9000 wewnątrz sieci sieciowych
+    volumes:
+      - ./src:/var/www/html:rw # PHP-FPM potrzebuje praw zapisu/odczytu do skryptów
+    environment:
+      # PHP-FPM odczytuje hasło do bazy danych bezpośrednio z zamontowanego sekretu, eliminując ryzyko wycieku w zmiennych środowiskowych
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password # Udostępnienie sekretu użytkownika w /run/secrets/
+    depends_on:
+      - db # PHP czeka na gotowość silnika bazodanowego
+    networks:
+      - backend
+
+  db:
+    image: mysql:8.0.36
+    container_name: mysql
+    restart: unless-stopped
+    expose:
+      - "3306" # Bezpieczna izolacja portu bazy danych
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      # MySQL odczytuje hasła bezpośrednio z zamontowanych sekretów, 
+      #eliminując ryzyko wycieku w zmiennych środowiskowych
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_DATABASE: testowa_baza_dominik
+      MYSQL_USER: dominik_user
+    secrets:
+      - db_root_password
+      - db_password
+    networks:
+      - backend
+
+  phpmyadmin:
+    image: phpmyadmin:5.2.1
+    container_name: phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "6001:80" # Dostęp do panelu graficznego na porcie 6001
+    environment:
+      PMA_HOST: db # Wskazanie na nazwę kontenera bazy danych w sieci backend
+      PMA_PORT: 3306
+      # Konfiguracja phpMyAdmin do autoryzacji z wykorzystaniem sekretu
+      PMA_PASSWORD_FILE: /run/secrets/db_password
+      PMA_USER: dominik_user
+    secrets:
+      - db_password
+    depends_on:
+      - db # Panel administracyjny czeka na bazę danych
+    networks:
+      - frontend
+      - backend
+
+secrets: # Deklaracja sekretów, które będą montowane do kontenerów jako pliki
+  db_root_password:
+    file: ./.secrets/db_root_password.txt
+  db_password:
+    file: ./.secrets/db_password.txt
+
+volumes:
+  db_data: # Wolumen do trwałego przechowywania danych MySQL
+
+networks:
+  frontend:
+    driver: bridge
+  backend:
+    driver: bridge
