@@ -85,7 +85,7 @@ Poniżej generowane jest pełne zestawienie `phpinfo()`, w którym w sekcji doda
 
 **4. Weryfikacja utworzonych sieci w silniku Dockera**
 
-Wywołanie polecenia systemowego w celu sprawdzenia, czy demona Dockera poprawnie zainicjalizował odizolowane strefy sieciowe zdefiniowane w pliku konfiguracyjnym Compose:
+Wywołanie polecenia systemowego w celu sprawdzenia, czy demon Dockera poprawnie zainicjalizował odizolowane strefy sieciowe zdefiniowane w pliku konfiguracyjnym Compose:
 
 ```bash
      docker network ls
