@@ -138,7 +138,7 @@ W tym celu, aby uniknąć konieczności instalowania zewnętrznych narzędzi tak
 
 Wynik działania tego polecenia zwracany przez terminal systemu:
 
-```bash
+```json
      [
      {"Type":"volume","Name":"lab14-stack-lemp_db_data","Source":"/var/lib/docker/volumes/lab14-stack-lemp_db_data/_data","Destination":"/var/lib/mysql","Driver":"local","Mode":"rw","RW":true,"Propagation":""},
      {"Type":"bind","Source":"C:\\Users\\dominik\\lab14\\secrets\\db_root_password.txt","Destination":"/run/secrets/db_root_password","Mode":"","RW":false,"Propagation":"rprivate"},
