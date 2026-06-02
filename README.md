@@ -182,23 +182,31 @@ stanowi ostateczny, aplikacyjny dowód na poprawność wdrożenia założeń bez
 
 Pliki z hasłami zostały wykluczone z repozytorium za pomocą .gitignore. Aby uruchomić i przetestować projekt lokalnie, należy ręcznie utworzyć strukturę sekretów:
 
-1. W głównym katalogu projektu utwórz folder o nazwie secrets.
+1. Otwórz terminal (konsolę) i przejdź do głównego katalogu projektu (tam, gdzie znajduje się plik docker-compose.yml).
 
-2. Wewnątrz folderu secrets utwórz dwa pliki tekstowe:
+2. Utwórz w tym miejscu folder o nazwie secrets.
+
+3. Wewnątrz folderu secrets utwórz dwa pliki tekstowe:
 
      - db_root_password.txt – wpisz w nim hasło administratora bazy (root).
 
      - db_password.txt – wpisz w nim hasło użytkownika aplikacji (dominik_user).
 
-3. Uruchom cały stack komendą w terminalu:
+4. Uruchom cały stack komendą w terminalu:
 ```bash    
     docker compose up -d
 ```
 
 Dzięki mechanizmowi Docker Secrets, konfiguracja jest uniwersalna – system automatycznie podmontuje w trybie tylko do odczytu (Read-Only) dowolne hasła wprowadzone do powyższych plików.
 
+**Czyszczenie środowiska (Po zakończeniu testów)**
 
+Aby zatrzymać aplikację i całkowicie usunąć z systemu kontenery, sieci wirtualne oraz tymczasowe wolumeny danych, należy w głównym katalogu projektu wykonać polecenie:
 
+```bash
+docker compose down -v
+```
 
+Gwarantuje to pełne zwolnienie zasobów systemowych (pamięci RAM i dysku) hosta oraz przywraca środowisko deweloperskie do stanu początkowego.
 
 
