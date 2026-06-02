@@ -148,13 +148,17 @@ Wynik działania tego polecenia zwracany przez terminal systemu:
      ]
 ```
 
-Analizując strukturę punktów montowania wygenerowaną przez demona Dockera, widzimy wyraźnie dwa niezależne punkty wejścia typu bind dedykowane dla ochrony danych wrażliwych:  
+Analizując strukturę punktów montowania wygenerowaną przez demona Dockera, widzimy wyraźnie pełną separację danych trwałych od danych wrażliwych za pomocą dwóch różnych mechanizmów wirtualizacji pamięci:
 
--> Pierwszy z nich pobiera źródło z pliku tekstowego hosta (katalog \secrets\db_root_password.txt) i montuje go wewnątrz kontenera bazy danych w ścieżce docelowej /run/secrets/db_root_password.  
+**Trwały wolumen danych (Type: volume):** Pierwszy wpis jednoznacznie potwierdza poprawne zmapowanie nazwanego wolumenu lab14-stack-lemp_db_data z katalogu produkcyjnego demona Dockera do ścieżki /var/lib/mysql wewnątrz kontenera bazy. Kluczowy parametr "RW": true dowodzi, że silnik MySQL posiada pełne prawa do zapisu i odczytu, co gwarantuje bezproblemowe, trwałe składowanie tabel i baz danych (np. utworzonej bazy testowa_baza_dominik) nawet po całkowitym usunięciu kontenera.
 
--> Drugi punkt poprawnie montuje hasło użytkownika w ścieżce /run/secrets/db_password.  
+**Bezpieczne punkty montowania sekretów (Type: bind):** Dwa kolejne wpisy to dedykowane punkty wejścia typu bind mount powiązane z mechanizmem Docker Secrets:
 
--> Kluczowy parametr "RW": false dla obu tych wpisów jednoznacznie dowodzi, że sekrety zostały zmapowane w trybie tylko do odczytu (Read-Only).
+- Pierwszy z nich pobiera źródło z pliku tekstowego hosta (\secrets\db_root_password.txt) i mapuje go do ścieżki docelowej /run/secrets/db_root_password.
+
+- Drugi punkt poprawnie dostarcza hasło użytkownika w ścieżce /run/secrets/db_password.
+
+**Dowód bezpieczeństwa chmurowego:** Kluczowy parametr "RW": false przypisany do obu punktów typu bind jednoznacznie dowodzi, że sekrety zostały zmapowane w rygorystycznym trybie tylko do odczytu (Read-Only). Uniemożliwia to modyfikację plików haseł z poziomu skryptów aplikacyjnych oraz zapewnia izolację danych wrażliwych na poziomie jądra systemu.
 
 **Architektura zgodna z metodologią Twelve-Factor App**
 
