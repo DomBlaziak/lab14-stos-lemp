@@ -43,8 +43,6 @@ Uruchomienie całego stacku kontenerów LEMP wraz z phpMyAdmin za pomocą jedneg
 ```bash
      [+] up 67/67
  ✔ Image nginx:1.25.4-alpine         Pulled                                                                             44.2s
- ✔ myadmin:5.2.1                     Pulled                                                                             82.1s
- ✔ Image nginx:1.25.4-alpine         Pulled                                                                             44.2s
  ✔ Image phpmyadmin:5.2.1            Pulled                                                                             82.1s
  ✔ Image php:8.3-fpm-alpine          Pulled                                                                             31.3s
  ✔ Image mysql:8.0.36                Pulled                                                                             61.8s
