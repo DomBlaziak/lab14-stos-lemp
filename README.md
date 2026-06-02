@@ -176,6 +176,26 @@ Wyświetlenie na ekranie komunikatu o treści:
 `"Sukces: PHP pomyślnie połączyło się z bazą MySQL przy użyciu Docker Secrets!"`
 stanowi ostateczny, aplikacyjny dowód na poprawność wdrożenia założeń bezpieczeństwa systemów rozproszonych i poprawne działanie całego środowiska.
 
+---
+
+**Instrukcja uruchomienia w środowisku testowym**
+
+Pliki z hasłami zostały wykluczone z repozytorium za pomocą .gitignore. Aby uruchomić i przetestować projekt lokalnie, należy ręcznie utworzyć strukturę sekretów:
+
+1. W głównym katalogu projektu utwórz folder o nazwie secrets.
+
+2. Wewnątrz folderu secrets utwórz dwa pliki tekstowe:
+
+     - db_root_password.txt – wpisz w nim hasło administratora bazy (root).
+
+     - db_password.txt – wpisz w nim hasło użytkownika aplikacji (dominik_user).
+
+3. Uruchom cały stack komendą w terminalu:
+```bash    
+    docker compose up -d
+```
+
+Dzięki mechanizmowi Docker Secrets, konfiguracja jest uniwersalna – system automatycznie podmontuje w trybie tylko do odczytu (Read-Only) dowolne hasła wprowadzone do powyższych plików.
 
 
 
