@@ -40,11 +40,22 @@ Uruchomienie całego stacku kontenerów LEMP wraz z phpMyAdmin za pomocą jedneg
      docker compose up -d
 ```
 
-
-
-
-
-
+```bash
+     [+] up 67/67
+ ✔ Image nginx:1.25.4-alpine         Pulled                                                                             44.2s
+ ✔ myadmin:5.2.1                     Pulled                                                                             82.1s
+ ✔ Image nginx:1.25.4-alpine         Pulled                                                                             44.2s
+ ✔ Image phpmyadmin:5.2.1            Pulled                                                                             82.1s
+ ✔ Image php:8.3-fpm-alpine          Pulled                                                                             31.3s
+ ✔ Image mysql:8.0.36                Pulled                                                                             61.8s
+ ✔ Network lab14-stack-lemp_frontend Created                                                                             0.1s
+ ✔ Network lab14-stack-lemp_backend  Created                                                                             0.1s
+ ✔ Volume lab14-stack-lemp_db_data   Created                                                                             0.0s
+ ✔ Container mysql                   Started                                                                             4.5s
+ ✔ Container phpmyadmin              Started                                                                             2.7s
+ ✔ Container php                     Started                                                                             2.3s
+ ✔ Container nginx                   Started                                                                             2.2s
+```
 
 
 **2. Weryfikacja statusu uruchomionych kontenerów**
@@ -55,19 +66,49 @@ Kontrola stanu procesów, nazewnictwa oraz zmapowanych portów w celu upewnienia
      docker compose ps
 ```
 
-
-
-
-
-
-
-
+```bash
+ NAME         IMAGE                 COMMAND                  SERVICE      CREATED         STATUS         PORTS
+mysql        mysql:8.0.36          "docker-entrypoint.s…"   db           3 minutes ago   Up 3 minutes   3306/tcp, 33060/tcp  
+nginx        nginx:1.25.4-alpine   "/docker-entrypoint.…"   nginx        3 minutes ago   Up 3 minutes   0.0.0.0:4001->80/tcp, [::]:4001->80/tcp
+php          php:8.3-fpm-alpine    "docker-php-entrypoi…"   php          3 minutes ago   Up 3 minutes   9000/tcp
+phpmyadmin   phpmyadmin:5.2.1      "/docker-entrypoint.…"   phpmyadmin   3 minutes ago   Up 3 minutes   0.0.0.0:6001->80/tcp, [::]:6001->80/tcp
+```
 
 **3. Dowód poprawnego działania stacku LEMP i bazy danych**
 
-**Działanie strony startowej:** Po wpisaniu w przeglądarce adresu `http://localhost:4001` serwer Nginx pomyślnie przetworzył zapytanie, odnalazł domyślną stronę i przekazał ją do wykonania kontenerowi PHP-FPM, który poprawnie wyrenderował dynamiczny plik index.php.  
+**Działanie strony startowej (Port 4001):** Po wpisaniu w przeglądarce adresu `http://localhost:4001` serwer Nginx pomyślnie przetworzył zapytanie i przekazał je do kontenera PHP-FPM. Na ekranie wyświetla się czytelny, zielony komunikat o treści:
+`"Sukces: PHP pomyślnie połączyło się z bazą MySQL przy użyciu Docker Secrets!"`.
+Poniżej generowane jest pełne zestawienie `phpinfo()`, w którym w sekcji dodatkowych plików konfiguracyjnych widnieje sparsowany plik `/usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini`. Udowadnia to, że środowisko samodzielnie i bezbłędnie uzbroiło się w wymagane sterowniki bazodanowe przy zachowaniu lekkiego obrazu deweloperskiego.
 
-**Inicjalizacja testowej bazy danych:** Po zalogowaniu się do panelu graficznego phpMyAdmin pod adresem `http://localhost:6001` pomyślnie utworzono nową testową bazę danych o nazwie testowa_baza_dominik, co udowadnia poprawność komunikacji oraz prawidłowe działanie trwałego wolumenu danych.
+**Inicjalizacja testowej bazy danych (Port 6001):** Panel graficzny phpMyAdmin pod adresem `http://localhost:6001` pozwala na bezproblemowe zalogowanie z wykorzystaniem zmapowanego sekretu użytkownika. W systemie widoczna jest już automatycznie zainicjalizowana przez skrypt konfiguracyjny baza danych o nazwie `testowa_baza_dominik`. Serwer bazy identyfikuje się w panelu jako `db via TCP/IP`, z systemowym kodowaniem `utf8mb4`, działający pod odizolowanym adresem wewnętrznym sieci backend (np. `dominik_user@172.20.0.4`), co w pełni potwierdza poprawność komunikacji sieciowej i separacji stref.
+
+
+**4. Weryfikacja utworzonych sieci w silniku Dockera**
+
+Wywołanie polecenia systemowego w celu sprawdzenia, czy demona Dockera poprawnie zainicjalizował odizolowane strefy sieciowe zdefiniowane w pliku konfiguracyjnym Compose:
+
+```bash
+     docker network ls
+```
+
+```bash
+NETWORK ID     NAME                        DRIVER    SCOPE
+5f3713115544   blackhole                   bridge    local
+a112fe20b2e0   bridge                      bridge    local
+df801356cc21   host                        host      local
+23a556d95988   lab11net                    bridge    local
+4e8fa7892693   lab14-stack-lemp_backend    bridge    local
+4e61b0c2dd1d   lab14-stack-lemp_frontend   bridge    local
+56a76d4fd97c   mybridge                    bridge    local
+1ba2dc29548e   none                        null      local
+a66e15ff227c   skynet                      bridge    local  
+```
+
+Wynik polecenia jednoznacznie potwierdza fizyczne utworzenie dwóch dedykowanych sieci wirtualnych obsługiwanych przez wbudowany sterownik bridge:
+
+**lab14-stack-lemp_frontend:** Odpowiada za bezpieczne wystawienie interfejsów publicznych na świat zewnętrzny (Reverse Proxy Nginx oraz phpMyAdmin).
+
+**lab14-stack-lemp_backend:** Izoluje kluczowe procesy przetwarzania danych i silnik bazy (MySQL oraz interpreter PHP-FPM), realizując tym samym założenia pełnej separacji warstwowej architektury chmurowej.
 
 ---
 
@@ -99,26 +140,29 @@ W tym celu, aby uniknąć konieczności instalowania zewnętrznych narzędzi tak
 
 Wynik działania tego polecenia zwracany przez terminal systemu:
 
-
-
-
-
-
-
-
-
-
-
-
+```bash
+     [
+     {"Type":"volume","Name":"lab14-stack-lemp_db_data","Source":"/var/lib/docker/volumes/lab14-stack-lemp_db_data/_data","Destination":"/var/lib/mysql","Driver":"local","Mode":"rw","RW":true,"Propagation":""},
+     {"Type":"bind","Source":"C:\\Users\\dominik\\lab14\\secrets\\db_root_password.txt","Destination":"/run/secrets/db_root_password","Mode":"","RW":false,"Propagation":"rprivate"},
+     {"Type":"bind","Source":"C:\\Users\\dominik\\lab14\\secrets\\db_password.txt","Destination":"/run/secrets/db_password","Mode":"","RW":false,"Propagation":"rprivate"}
+     ]
+```
 
 Analizując strukturę punktów montowania wygenerowaną przez demona Dockera, widzimy wyraźnie dwa niezależne punkty wejścia typu bind dedykowane dla ochrony danych wrażliwych:  
 
--> Pierwszy z nich pobiera źródło z pliku tekstowego /Users/Dominik/lab14/.secrets/db_root_password.txt i montuje go wewnątrz kontenera bazy danych w ścieżce docelowej /run/secrets/db_root_password.  
+-> Pierwszy z nich pobiera źródło z pliku tekstowego hosta (katalog \secrets\db_root_password.txt) i montuje go wewnątrz kontenera bazy danych w ścieżce docelowej /run/secrets/db_root_password.  
 
 -> Drugi punkt poprawnie montuje hasło użytkownika w ścieżce /run/secrets/db_password.  
 
--> Kluczowy parametr "RW": false dla obu tych wpisów jednoznacznie dowodzi, że sekrety zostały zmapowane w trybie tylko do odczytu.
+-> Kluczowy parametr "RW": false dla obu tych wpisów jednoznacznie dowodzi, że sekrety zostały zmapowane w trybie tylko do odczytu (Read-Only).
 
+**Architektura zgodna z metodologią Twelve-Factor App**
+
+Zastosowane rozwiązanie separacji konfiguracji infrastruktury od danych wrażliwych (haseł) w pełni realizuje kluczowe wytyczne nowoczesnego manifestu systemów rozproszonych i chmurowych The Twelve-Factor App:
+
+**III Factor (Config):** Zasada ta mówi, że konfiguracja środowiskowa aplikacji musi być całkowicie odizolowana od kodu źródłowego. Dzięki przechowywaniu uniwersalnych szablonów zmiennych w docker-compose.yml, a surowych haseł w zewnętrznym katalogu, repozytorium jest bezpieczne i pozbawione zakodowanych na sztywno sekretów.
+
+**V Factor (Build, release, run):** Rozwiązanie zapewnia ścisłą separację etapów uruchomieniowych. Identyczny obraz kontenera może zostać bez przeszkód wdrożony w środowisku deweloperskim, testowym, jak i produkcyjnym. Jedyną rzeczą, która się zmienia, jest zawartość lokalnych plików dostarczanych do punktu montowania /run/secrets/, co czyni cały stack aplikacyjny niezwykle elastycznym i przenośnym.
 
 **Ostateczny dowód integracji aplikacji z architekturą chmurową**
 

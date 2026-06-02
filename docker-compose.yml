@@ -21,17 +21,20 @@ services:
     image: php:8.3-fpm-alpine
     container_name: php
     restart: unless-stopped
+    user: root
+    # Instalacja klienta MySQL i rozszerzenia PDO MySQL bezpośrednio w poleceniu uruchomienia, 
+    # co pozwala na zachowanie lekkiego obrazu bazowego
+    command: sh -c "apk add --no-cache mysql-client && docker-php-ext-install pdo_mysql && php-fpm"
     expose:
-      - "9000" # Izolacja portu 9000 wewnątrz sieci sieciowych
+      - "9000" # Izolacja portu PHP-FPM, dostępnego tylko dla Nginx w tej samej sieci
     volumes:
-      - ./src:/var/www/html:rw # PHP-FPM potrzebuje praw zapisu/odczytu do skryptów
+      - ./src:/var/www/html:rw # Kod źródłowy jako powiązanie z możliwością zapisu
     environment:
-      # PHP-FPM odczytuje hasło do bazy danych bezpośrednio z zamontowanego sekretu, eliminując ryzyko wycieku w zmiennych środowiskowych
-      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password # Bezpieczne przekazywanie hasła do bazy danych przez plik sekretu
     secrets:
-      - db_password # Udostępnienie sekretu użytkownika w /run/secrets/
+      - db_password
     depends_on:
-      - db # PHP czeka na gotowość silnika bazodanowego
+      - db # Interpreter PHP-FPM czeka na pełne uruchomienie bazy danych
     networks:
       - backend
 
@@ -42,10 +45,10 @@ services:
     expose:
       - "3306" # Bezpieczna izolacja portu bazy danych
     volumes:
-      - db_data:/var/lib/mysql
+      - db_data:/var/lib/mysql # Trwałe przechowywanie danych MySQL w wolumenie
     environment:
       # MySQL odczytuje hasła bezpośrednio z zamontowanych sekretów, 
-      #eliminując ryzyko wycieku w zmiennych środowiskowych
+      # eliminując ryzyko wycieku w zmiennych środowiskowych
       MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
       MYSQL_PASSWORD_FILE: /run/secrets/db_password
       MYSQL_DATABASE: testowa_baza_dominik
@@ -71,20 +74,21 @@ services:
     secrets:
       - db_password
     depends_on:
-      - db # Panel administracyjny czeka na bazę danych
+      - db # Panel administracyjny czeka na baza danych
     networks:
       - frontend
       - backend
 
 secrets: # Deklaracja sekretów, które będą montowane do kontenerów jako pliki
   db_root_password:
-    file: ./.secrets/db_root_password.txt
+    file: ./secrets/db_root_password.txt
   db_password:
-    file: ./.secrets/db_password.txt
+    file: ./secrets/db_password.txt
 
 volumes:
   db_data: # Wolumen do trwałego przechowywania danych MySQL
 
+# Definicja sieci dla izolacji i komunikacji między kontenerami
 networks:
   frontend:
     driver: bridge
