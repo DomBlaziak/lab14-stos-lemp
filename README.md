@@ -74,8 +74,11 @@ phpmyadmin   phpmyadmin:5.2.1      "/docker-entrypoint.…"   phpmyadmin   3 min
 
 **Działanie strony startowej (Port 4001):** Po wpisaniu w przeglądarce adresu `http://localhost:4001` serwer Nginx pomyślnie przetworzył zapytanie i przekazał je do kontenera PHP-FPM. Na ekranie wyświetla się czytelny, zielony komunikat o treści: `"Sukces: PHP pomyślnie połączyło się z bazą MySQL przy użyciu Docker Secrets!"`. Poniżej generowane jest pełne zestawienie **phpinfo()**, w którym w sekcji dodatkowych plików konfiguracyjnych widnieje sparsowany plik `/usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini`. Udowadnia to, że środowisko samodzielnie i bezbłędnie uzbroiło się w wymagane sterowniki bazodanowe przy zachowaniu lekkiego obrazu deweloperskiego.
 
+![Strona startowa - Port 4001](./screenshots/port_4001.png)
+
 **Inicjalizacja testowej bazy danych (Port 6001):** Panel graficzny phpMyAdmin pod adresem `http://localhost:6001` pozwala na bezproblemowe zalogowanie z wykorzystaniem zmapowanego sekretu użytkownika. W systemie widoczna jest już automatycznie zainicjalizowana przez skrypt konfiguracyjny baza danych o nazwie testowa_baza_dominik. Serwer bazy identyfikuje się w panelu jako db via TCP/IP, z systemowym kodowaniem utf8mb4, działający pod odizolowanym adresem wewnętrznym sieci backend (np. dominik_user@172.20.0.4), co w pełni potwierdza poprawność komunikacji sieciowej i separacji stref.
 
+![Panel phpMyAdmin - Port 6001](./screenshots/port_6001.png)
 
 **4. Weryfikacja utworzonych sieci w silniku Dockera**
 
@@ -196,7 +199,9 @@ Pliki z hasłami zostały wykluczone z repozytorium za pomocą .gitignore. Aby u
 
 Dzięki mechanizmowi Docker Secrets, konfiguracja jest uniwersalna – system automatycznie podmontuje w trybie tylko do odczytu (Read-Only) dowolne hasła wprowadzone do powyższych plików.
 
-Uwaga: Podczas rozruchu kontener PHP pobiera i konfiguruje sterownik bazy danych bezpośrednio w locie, co potrwa około 2-3 minut. Po zakończeniu tego procesu środowisko staje się w pełni aktywne.
+Postęp pobierania i kompilacji sterownika MySQL w locie można śledzić poleceniem: `docker logs -f php`.
+
+Uwaga: Podczas pierwszego rozruchu kontener PHP potrzebuje około 2-3 minut na zbudowanie rozszerzenia pdo_mysql. W tym czasie przeglądarka na porcie 4001 może przejściowo zwracać błąd 502 Bad Gateway, który zniknie samoczynnie po zakończeniu instalacji.
 
 
 **Czyszczenie środowiska (Po zakończeniu testów)**
