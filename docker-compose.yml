@@ -22,19 +22,19 @@ services:
     container_name: php
     restart: unless-stopped
     user: root
-    # Instalacja klienta MySQL i rozszerzenia PDO MySQL bezpośrednio w poleceniu uruchomienia, 
-    # co pozwala na zachowanie lekkiego obrazu bazowego
     command: sh -c "apk add --no-cache mysql-client && docker-php-ext-install pdo_mysql && php-fpm"
     expose:
-      - "9000" # Izolacja portu PHP-FPM, dostępnego tylko dla Nginx w tej samej sieci
+      - "9000" # Izolacja portu PHP-FPM dla sieci backend
     volumes:
-      - ./src:/var/www/html:rw # Kod źródłowy jako powiązanie z możliwością zapisu
+      - ./src:/var/www/html:rw # Kod źródłowy jako powiązanie (do odczytu i zapisu)
+      - php_extensions:/usr/local/lib/php/extensions # Wolumen na skompilowane rozszerzenia PHP (przyspiesza start)
+      - php_conf:/usr/local/etc/php/conf.d  # Wolumen na automatyczną konfigurację rozszerzeń PHP         
     environment:
-      MYSQL_PASSWORD_FILE: /run/secrets/db_password # Bezpieczne przekazywanie hasła do bazy danych przez plik sekretu
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
     secrets:
       - db_password
     depends_on:
-      - db # Interpreter PHP-FPM czeka na pełne uruchomienie bazy danych
+      - db
     networks:
       - backend
 
@@ -43,9 +43,9 @@ services:
     container_name: mysql
     restart: unless-stopped
     expose:
-      - "3306" # Bezpieczna izolacja portu bazy danych
+      - "3306" # Bezpieczna izolacja portu bazy danych w sieci wewnętrznej
     volumes:
-      - db_data:/var/lib/mysql # Trwałe przechowywanie danych MySQL w wolumenie
+      - db_data:/var/lib/mysql # Trwałe przechowywanie baz danych w wolumenie
     environment:
       # MySQL odczytuje hasła bezpośrednio z zamontowanych sekretów, 
       # eliminując ryzyko wycieku w zmiennych środowiskowych
@@ -68,27 +68,29 @@ services:
     environment:
       PMA_HOST: db # Wskazanie na nazwę kontenera bazy danych w sieci backend
       PMA_PORT: 3306
-      # Konfiguracja phpMyAdmin do autoryzacji z wykorzystaniem sekretu
+      # Konfiguracja phpMyAdmin do automatycznej autoryzacji z wykorzystaniem sekretu
       PMA_PASSWORD_FILE: /run/secrets/db_password
       PMA_USER: dominik_user
     secrets:
       - db_password
     depends_on:
-      - db # Panel administracyjny czeka na baza danych
+      - db # Panel administracyjny czeka na gotowość bazy danych
     networks:
       - frontend
       - backend
 
-secrets: # Deklaracja sekretów, które będą montowane do kontenerów jako pliki
+secrets: # Deklaracja sekretów, które będą montowane do kontenerów jako pliki tekstowe
   db_root_password:
     file: ./secrets/db_root_password.txt
   db_password:
     file: ./secrets/db_password.txt
 
-volumes:
-  db_data: # Wolumen do trwałego przechowywania danych MySQL
+volumes: # Rejestracja globalnych wolumenów trwałych
+  db_data: # Wolumen do bezpiecznego składowania tabel bazy MySQL
+  php_extensions: # Wolumen zachowujący skompilowany sterownik pdo_mysql przy restartach
+  php_conf: # Wolumen zachowujący pliki konfiguracyjne .ini dla rozszerzeń PHP
 
-# Definicja sieci dla izolacji i komunikacji między kontenerami
+# Definicja odizolowanych stref sieciowych
 networks:
   frontend:
     driver: bridge
