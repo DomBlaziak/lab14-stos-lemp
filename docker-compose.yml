@@ -1,4 +1,4 @@
-name: lab14-stack-lemp # Globalna stabilna nazwa projektu (Dobra praktyka V2)
+name: lab14-stack-lemp # Globalna stabilna nazwa projektu
 
 services:
 
@@ -26,9 +26,7 @@ services:
     expose:
       - "9000" # Izolacja portu PHP-FPM dla sieci backend
     volumes:
-      - ./src:/var/www/html:rw # Kod źródłowy jako powiązanie (do odczytu i zapisu)
-      - php_extensions:/usr/local/lib/php/extensions # Wolumen na skompilowane rozszerzenia PHP (przyspiesza start)
-      - php_conf:/usr/local/etc/php/conf.d  # Wolumen na automatyczną konfigurację rozszerzeń PHP         
+      - ./src:/var/www/html:rw # Kod źródłowy jako powiązanie (do odczytu i zapisu)    
     environment:
       MYSQL_PASSWORD_FILE: /run/secrets/db_password
     secrets:
@@ -87,8 +85,6 @@ secrets: # Deklaracja sekretów, które będą montowane do kontenerów jako pli
 
 volumes: # Rejestracja globalnych wolumenów trwałych
   db_data: # Wolumen do bezpiecznego składowania tabel bazy MySQL
-  php_extensions: # Wolumen zachowujący skompilowany sterownik pdo_mysql przy restartach
-  php_conf: # Wolumen zachowujący pliki konfiguracyjne .ini dla rozszerzeń PHP
 
 # Definicja odizolowanych stref sieciowych
 networks:

@@ -2,35 +2,33 @@
 
 Autor: **Dominik Błaziak**
 
-**ZADANIE OBOWIĄZKOWE (Laboratorium 14)**
+### ZADANIE OBOWIĄZKOWE (Laboratorium 14)
 
 **Architektura i segmentacja sieciowa stacku LEMP**
 
 Aplikacja składa się z czterech odrębnych kontenerów (mikrousług):
 
--> Nginx (kontener o nazwie nginx): Wydajny serwer WWW, który działa jako Reverse Proxy.
+* **Nginx** (kontener o nazwie `nginx`): Wydajny serwer WWW, który działa jako Reverse Proxy.
+* **PHP-FPM** (kontener o nazwie `php`): Interpreter procesów odpowiedzialny za dynamiczne wykonywanie skryptów PHP.
+* **MySQL** (kontener o nazwie `mysql`): Relacyjny silnik bazy danych do składowania danych aplikacji.
+* **phpMyAdmin** (kontener o nazwie `phpmyadmin`): Graficzny interfejs webowy służący do administracji bazą danych.  
 
--> PHP-FPM (kontener o nazwie php): Interpreter procesów odpowiedzialny za dynamiczne wykonywanie skryptów PHP.
-
--> MySQL (kontener o nazwie mysql): Relacyjny silnik bazy danych do składowania danych aplikacji.
-
--> phpMyAdmin (kontener o nazwie phpmyadmin): Graficzny interfejs webowy służący do administracji bazą danych.  
 
 **Uzasadnienie topologii sieciowej oraz przynależności serwera phpMyAdmin**
 
 Zgodnie z wymaganiami projektowymi, sieć została podzielona na dwie odizolowane strefy za pomocą domyślnego sterownika bridge:  
 
-**Sieć backend:** Służy do bezpiecznej komunikacji wewnętrznej. Przypisane są do niej kontenery php oraz db. Ich porty wewnętrzne (odpowiednio 9000 oraz 3306) zostały całkowicie odizolowane od systemu operacyjnego hosta za pomocą dyrektywy expose. Uniemożliwia to bezpośredni atak na bazę lub interpreter z zewnątrz.  
+* **Sieć backend:** Służy do bezpiecznej komunikacji wewnętrznej. Przypisane są do niej kontenery `php` oraz `db`. Ich porty wewnętrzne (odpowiednio 9000 oraz 3306) zostały całkowicie odizolowane od systemu operacyjnego hosta za pomocą dyrektywy `expose`. Uniemożliwia to bezpośredni atak na bazę lub interpreter z zewnątrz.  
 
-**Sieć frontend:** Służy do przyjmowania ruchu użytkowników z poziomu przeglądarki. Serwer WWW Nginx mapuje ruch z bezpiecznego portu hosta 4001 na port 80 wewnątrz kontenera, dzięki czemu aplikacja jest dostępna dla świata.  
+* **Sieć frontend:** Służy do przyjmowania ruchu użytkowników z poziomu przeglądarki. Serwer WWW Nginx mapuje ruch z bezpiecznego portu hosta 4001 na port 80 wewnątrz kontenera, dzięki czemu aplikacja jest dostępna dla świata. 
 
-Kontener phpmyadmin został celowo dołączony do obu sieci jednocześnie (frontend oraz backend). Wynika to z faktu, że aplikacja ta musi pełnić rolę **pomostu architektonicznego** w systemie:  
+Kontener `phpmyadmin` został celowo dołączony do obu sieci jednocześnie (frontend oraz backend). Wynika to z faktu, że aplikacja ta musi pełnić rolę **pomostu architektonicznego** w systemie:  
 
-- Poprzez **sieć frontend** umożliwia administratorowi zmapowanie dedykowanego portu 6001 na port 80 kontenera, dzięki czemu uzyskujemy dostęp do interfejsu graficznego panelu w przeglądarce.  
+* Poprzez **sieć frontend** umożliwia administratorowi zmapowanie dedykowanego portu 6001 na port 80 kontenera, dzięki czemu uzyskujemy dostęp do interfejsu graficznego panelu w przeglądarce.  
 
-- Poprzez jednoczesną przynależność do **sieci backend**, phpMyAdmin zyskuje wewnętrzny, bezpieczny dostęp do kontenera bazy danych (mysql) na porcie 3306. Pozwala to na pomyślną autoryzację, zarządzanie tabelami i przesyłanie kwerend SQL, bez wystawiania samej bazy danych bezpośrednio na świat.  
+* Poprzez jednoczesną przynależność do **sieci backend**, phpMyAdmin zyskuje wewnętrzny, bezpieczny dostęp do kontenera bazy danych (`mysql`) na porcie 3306. Pozwala to na pomyślną autoryzację, zarządzanie tabelami i przesyłanie kwerend SQL, bez wystawiania samej bazy danych bezpośrednio na świat.
 
-**Wykaz użytych poleceń wraz z wynikami działania**
+### Wykaz użytych poleceń wraz z wynikami działania
 
 **1. Uruchomienie usług w trybie odizolowanym (detach)**
 
@@ -74,11 +72,9 @@ phpmyadmin   phpmyadmin:5.2.1      "/docker-entrypoint.…"   phpmyadmin   3 min
 
 **3. Dowód poprawnego działania stacku LEMP i bazy danych**
 
-**Działanie strony startowej (Port 4001):** Po wpisaniu w przeglądarce adresu `http://localhost:4001` serwer Nginx pomyślnie przetworzył zapytanie i przekazał je do kontenera PHP-FPM. Na ekranie wyświetla się czytelny, zielony komunikat o treści:
-`"Sukces: PHP pomyślnie połączyło się z bazą MySQL przy użyciu Docker Secrets!"`.
-Poniżej generowane jest pełne zestawienie `phpinfo()`, w którym w sekcji dodatkowych plików konfiguracyjnych widnieje sparsowany plik `/usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini`. Udowadnia to, że środowisko samodzielnie i bezbłędnie uzbroiło się w wymagane sterowniki bazodanowe przy zachowaniu lekkiego obrazu deweloperskiego.
+**Działanie strony startowej (Port 4001):** Po wpisaniu w przeglądarce adresu `http://localhost:4001` serwer Nginx pomyślnie przetworzył zapytanie i przekazał je do kontenera PHP-FPM. Na ekranie wyświetla się czytelny, zielony komunikat o treści: `"Sukces: PHP pomyślnie połączyło się z bazą MySQL przy użyciu Docker Secrets!"`. Poniżej generowane jest pełne zestawienie **phpinfo()**, w którym w sekcji dodatkowych plików konfiguracyjnych widnieje sparsowany plik `/usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini`. Udowadnia to, że środowisko samodzielnie i bezbłędnie uzbroiło się w wymagane sterowniki bazodanowe przy zachowaniu lekkiego obrazu deweloperskiego.
 
-**Inicjalizacja testowej bazy danych (Port 6001):** Panel graficzny phpMyAdmin pod adresem `http://localhost:6001` pozwala na bezproblemowe zalogowanie z wykorzystaniem zmapowanego sekretu użytkownika. W systemie widoczna jest już automatycznie zainicjalizowana przez skrypt konfiguracyjny baza danych o nazwie `testowa_baza_dominik`. Serwer bazy identyfikuje się w panelu jako `db via TCP/IP`, z systemowym kodowaniem `utf8mb4`, działający pod odizolowanym adresem wewnętrznym sieci backend (np. `dominik_user@172.20.0.4`), co w pełni potwierdza poprawność komunikacji sieciowej i separacji stref.
+**Inicjalizacja testowej bazy danych (Port 6001):** Panel graficzny phpMyAdmin pod adresem http://localhost:6001 pozwala na bezproblemowe zalogowanie z wykorzystaniem zmapowanego sekretu użytkownika. W systemie widoczna jest już automatycznie zainicjalizowana przez skrypt konfiguracyjny baza danych o nazwie testowa_baza_dominik. Serwer bazy identyfikuje się w panelu jako db via TCP/IP, z systemowym kodowaniem utf8mb4, działający pod odizolowanym adresem wewnętrznym sieci backend (np. dominik_user@172.20.0.4), co w pełni potwierdza poprawność komunikacji sieciowej i separacji stref.
 
 
 **4. Weryfikacja utworzonych sieci w silniku Dockera**
@@ -104,24 +100,23 @@ a66e15ff227c   skynet                      bridge    local
 
 Wynik polecenia jednoznacznie potwierdza fizyczne utworzenie dwóch dedykowanych sieci wirtualnych obsługiwanych przez wbudowany sterownik bridge:
 
-**lab14-stack-lemp_frontend:** Odpowiada za bezpieczne wystawienie interfejsów publicznych na świat zewnętrzny (Reverse Proxy Nginx oraz phpMyAdmin).
+* **lab14-stack-lemp_frontend:** Odpowiada za bezpieczne wystawienie interfejsów publicznych na świat zewnętrzny (Reverse Proxy Nginx oraz phpMyAdmin).
 
-**lab14-stack-lemp_backend:** Izoluje kluczowe procesy przetwarzania danych i silnik bazy (MySQL oraz interpreter PHP-FPM), realizując tym samym założenia pełnej separacji warstwowej architektury chmurowej.
+* **lab14-stack-lemp_backend:** Izoluje kluczowe procesy przetwarzania danych i silnik bazy (MySQL oraz interpreter PHP-FPM), realizując tym samym założenia pełnej separacji warstwowej architektury chmurowej.
 
 ---
 
-**ZADANIE NIEOBOWIĄZKOWE (Laboratorium 14D)**
+### ZADANIE NIEOBOWIĄZKOWE (Laboratorium 14D)
 
 **Bezpieczeństwo danych wrażliwych za pomocą mechanizmu Docker Secrets**
 
-Tradycyjne podejście polegające na przekazywaniu haseł w sekcji environment pliku Compose lub poprzez plik .env stwarza poważne ryzyko bezpieczeństwa. Hasła są wtedy zapisane jawnym tekstem i stają się widoczne dla każdego użytkownika, który posiada uprawnienia do wywołania polecenia docker inspect na działającym kontenerze.  
+Tradycyjne podejście polegające na przekazywaniu haseł w sekcji environment pliku Compose lub poprzez plik .env stwarza poważne ryzyko bezpieczeństwa. Hasła są wtedy zapisane jawnym tekstem i stają się widoczne dla każdego użytkownika, który posiada uprawnienia do wywołania polecenia `docker inspect` na działającym kontenerze.  
 
 W celu całkowitej eliminacji tego zagrożenia, wdrożono natywny, bezpieczny mechanizm Docker Secrets, którego implementacja przebiegała w sposób dwuetapowy:  
 
-**Definicja najwyższego poziomu (Top-level secrets element):** Na samym dole pliku docker-compose.yaml zadeklarowano globalną sekcję secrets. Powiązano w niej logiczne, systemowe nazwy haseł (db_root_password oraz db_password) z fizycznymi plikami tekstowymi .txt, które znajdują się w odizolowanym katalogu na dysku hosta.  
+* **Definicja najwyższego poziomu (Top-level secrets element):** Na samym dole pliku docker-compose.yaml zadeklarowano globalną sekcję secrets. Powiązano w niej logiczne, systemowe nazwy haseł (db_root_password oraz db_password) z fizycznymi plikami tekstowymi .txt, które znajdują się w odizolowanym katalogu na dysku hosta.  
 
-**Aktualizacja i powiązanie wewnątrz definicji usług:** Wewnątrz konfiguracji kontenerów mysql, php oraz phpmyadmin dodano atrybut secrets, przyznając im uprawnienia dostępu do zadeklarowanych zasobów wrażliwych. Usługi wykorzystują zaawansowane zmienne środowiskowe z przyrostkiem _FILE (takie jak MYSQL_ROOT_PASSWORD_FILE, MYSQL_PASSWORD_FILE oraz PMA_PASSWORD_FILE).  
-
+* **Aktualizacja i powiązanie wewnątrz definicji usług:** Wewnątrz konfiguracji kontenerów mysql, php oraz phpmyadmin dodano atrybut secrets, przyznając im uprawnienia dostępu do zadeklarowanych zasobów wrażliwych. Usługi wykorzystują zaawansowane zmienne środowiskowe z przyrostkiem _FILE (takie jak MYSQL_ROOT_PASSWORD_FILE, MYSQL_PASSWORD_FILE oraz PMA_PASSWORD_FILE).  
 
 Dzięki takiej architekturze, Docker odczytuje hasła i automatycznie montuje je w systemie plików kontenera jako tymczasowy punkt typu bind mount o uprawnieniach wyłącznie do odczytu (Read-Only). Pliki te są dostępne wewnątrz odizolowanego środowiska w predefiniowanej ścieżce systemowej /run/secrets/. Hasła te nigdy nie są wstrzykiwane bezpośrednio do zmiennych środowiskowych procesu roboczego kontenera, co uniemożliwia ich przypadkowy wyciek w logach aplikacji.
 
@@ -130,7 +125,7 @@ Dzięki takiej architekturze, Docker odczytuje hasła i automatycznie montuje je
 
 Zgodnie z wymaganiami laboratoryjnymi, w sprawozdaniu należy dowieść, że pliki zawierające dane wrażliwe zostały poprawnie powiązane z serwisem jako bezpieczne punkty montowania w trybie Read-Only.  
 
-W tym celu, aby uniknąć konieczności instalowania zewnętrznych narzędzi takich jak jq, wykorzystano zaawansowane, wbudowane flagi formatowania go-template dostarczane bezpośrednio przez polecenie docker container inspect:
+W tym celu, aby uniknąć konieczności instalowania zewnętrznych narzędzi takich jak jq, wykorzystano zaawansowane, wbudowane flagi formatowania go-template dostarczane bezpośrednio przez polecenie `docker container inspect`:
 
 ```bash
      docker container inspect --format='{{json .Mounts}}' mysql
@@ -148,29 +143,30 @@ Wynik działania tego polecenia zwracany przez terminal systemu:
 
 Analizując strukturę punktów montowania wygenerowaną przez demona Dockera, widzimy wyraźnie pełną separację danych trwałych od danych wrażliwych za pomocą dwóch różnych mechanizmów wirtualizacji pamięci:
 
-**Trwały wolumen danych (Type: volume):** 
-- Pierwszy wpis jednoznacznie potwierdza poprawne zmapowanie nazwanego wolumenu lab14-stack-lemp_db_data z katalogu produkcyjnego demona Dockera do ścieżki /var/lib/mysql wewnątrz kontenera bazy. 
-- Kluczowy parametr "RW": true dowodzi, że silnik MySQL posiada pełne prawa do zapisu i odczytu, co gwarantuje bezproblemowe, trwałe składowanie tabel i baz danych (np. utworzonej bazy testowa_baza_dominik) nawet po całkowitym usunięciu kontenera.
+* **Trwały wolumen danych (Type: volume):** Pierwszy wpis jednoznacznie potwierdza poprawne zmapowanie nazwanego wolumenu lab14-stack-lemp_db_data z katalogu produkcyjnego demona Dockera do ścieżki /var/lib/mysql wewnątrz kontenera bazy. Kluczowy parametr "RW": true dowodzi, że silnik MySQL posiada pełne prawa do zapisu i odczytu, co gwarantuje bezproblemowe, trwałe składowanie tabel i baz danych (np. utworzonej bazy testowa_baza_dominik) nawet po całkowitym usunięciu kontenera.
 
-**Bezpieczne punkty montowania sekretów (Type: bind):** Dwa kolejne wpisy to dedykowane punkty wejścia typu bind mount powiązane z mechanizmem Docker Secrets:
+* **Bezpieczne punkty montowania sekretów (Type: bind):** Dwa kolejne wpisy to dedykowane punkty wejścia typu bind mount powiązane z mechanizmem Docker Secrets:
 
-- Pierwszy z nich pobiera źródło z pliku tekstowego hosta (\secrets\db_root_password.txt) i mapuje go do ścieżki docelowej /run/secrets/db_root_password.
+    * Pierwszy z nich pobiera źródło z pliku tekstowego hosta (\secrets\db_root_password.txt) i mapuje go do ścieżki docelowej /run/secrets/db_root_password.
 
-- Drugi punkt poprawnie dostarcza hasło użytkownika w ścieżce /run/secrets/db_password.
+    * Drugi punkt poprawnie dostarcza hasło użytkownika w ścieżce /run/secrets/db_password.
 
-- Kluczowy parametr "RW": false przypisany do obu punktów typu bind jednoznacznie dowodzi, że sekrety zostały zmapowane w rygorystycznym trybie tylko do odczytu (Read-Only). Uniemożliwia to modyfikację plików haseł z poziomu skryptów aplikacyjnych oraz zapewnia izolację danych wrażliwych na poziomie jądra systemu.
+* **Dowód bezpieczeństwa chmurowego:** Kluczowy parametr "RW": false przypisany do obu punktów typu bind jednoznacznie dowodzi, że sekrety zostały zmapowane w rygorystycznym trybie tylko do odczytu (Read-Only). Uniemożliwia to modyfikację plików haseł z poziomu skryptów aplikacyjnych oraz zapewnia izolację danych wrażliwych na poziomie jądra systemu.
 
-**Architektura zgodna z metodologią Twelve-Factor App**
+
+
+### Architektura zgodna z metodologią Twelve-Factor App
 
 Zastosowane rozwiązanie separacji konfiguracji infrastruktury od danych wrażliwych (haseł) w pełni realizuje kluczowe wytyczne nowoczesnego manifestu systemów rozproszonych i chmurowych The Twelve-Factor App:
 
-**III Factor (Config):** Zasada ta mówi, że konfiguracja środowiskowa aplikacji musi być całkowicie odizolowana od kodu źródłowego. Dzięki przechowywaniu uniwersalnych szablonów zmiennych w docker-compose.yml, a surowych haseł w zewnętrznym katalogu, repozytorium jest bezpieczne i pozbawione zakodowanych na sztywno sekretów.
+* **III Factor (Config):** Zasada ta mówi, że konfiguracja środowiskowa aplikacji musi być całkowicie odizolowana od kodu źródłowego. Dzięki przechowywaniu uniwersalnych szablonów zmiennych w docker-compose.yml, a surowych haseł w zewnętrznym katalogu, repozytorium jest bezpieczne i pozbawione zakodowanych na sztywno sekretów.
 
-**V Factor (Build, release, run):** Rozwiązanie zapewnia ścisłą separację etapów uruchomieniowych. Identyczny obraz kontenera może zostać bez przeszkód wdrożony w środowisku deweloperskim, testowym, jak i produkcyjnym. Jedyną rzeczą, która się zmienia, jest zawartość lokalnych plików dostarczanych do punktu montowania /run/secrets/, co czyni cały stack aplikacyjny niezwykle elastycznym i przenośnym.
+* **V Factor (Build, release, run):** Rozwiązanie zapewnia ścisłą separację etapów uruchomieniowych. Identyczny obraz kontenera może zostać bez przeszkód wdrożony w środowisku deweloperskim, testowym, jak i produkcyjnym. Jedyną rzeczą, która się zmienia, jest zawartość lokalnych plików dostarczanych do punktu montowania /run/secrets/, co czyni cały stack aplikacyjny niezwykle elastycznym i przenośnym.
+
 
 **Ostateczny dowód integracji aplikacji z architekturą chmurową**
 
-Wywołanie w przeglądarce strony pod adresem `http://localhost:4001` uruchamia skrypt index.php, który w locie sięga do bezpiecznej ścieżki /run/secrets/db_password, oczyszcza ciąg tekstowy funkcją trim() i bezbłędnie inicjuje obiekt PDO do bazy danych.
+Wywołanie w przeglądarce strony pod adresem `http://localhost:4001` uruchamia skrypt `index.php`, który w locie sięga do bezpiecznej ścieżki `/run/secrets/db_password`, oczyszcza ciąg tekstowy funkcją `trim()` i bezbłędnie inicjuje obiekt PDO do bazy danych.
 
 Wyświetlenie na ekranie komunikatu o treści:
 `"Sukces: PHP pomyślnie połączyło się z bazą MySQL przy użyciu Docker Secrets!"`
@@ -188,25 +184,27 @@ Pliki z hasłami zostały wykluczone z repozytorium za pomocą .gitignore. Aby u
 
 3. Wewnątrz folderu secrets utwórz dwa pliki tekstowe:
 
-     - db_root_password.txt – wpisz w nim hasło administratora bazy (root).
+     * db_root_password.txt – wpisz w nim hasło administratora bazy (root).
 
-     - db_password.txt – wpisz w nim hasło użytkownika aplikacji (dominik_user).
+     * db_password.txt – wpisz w nim hasło użytkownika aplikacji (dominik_user).
 
 4. Uruchom cały stack komendą w terminalu:
+
 ```bash    
     docker compose up -d
 ```
 
 Dzięki mechanizmowi Docker Secrets, konfiguracja jest uniwersalna – system automatycznie podmontuje w trybie tylko do odczytu (Read-Only) dowolne hasła wprowadzone do powyższych plików.
 
+Uwaga: Podczas rozruchu kontener PHP pobiera i konfiguruje sterownik bazy danych bezpośrednio w locie, co potrwa około 2-3 minut. Po zakończeniu tego procesu środowisko staje się w pełni aktywne.
+
+
 **Czyszczenie środowiska (Po zakończeniu testów)**
 
-Aby zatrzymać aplikację i całkowicie usunąć z systemu kontenery, sieci wirtualne oraz tymczasowe wolumeny danych, należy w głównym katalogu projektu wykonać polecenie:
+Aby zatrzymać aplikację i całkowicie usunąć z systemu kontenery, odizolowane sieci wirtualne oraz wolumeny danych bazy, należy w głównym katalogu projektu wykonać polecenie:
 
 ```bash
 docker compose down -v
 ```
 
-Gwarantuje to pełne zwolnienie zasobów systemowych (pamięci RAM i dysku) hosta oraz przywraca środowisko deweloperskie do stanu początkowego.
-
-
+Gwarantuje to pełne zwolnienie zasobów systemowych (pamięci RAM i dysku) hosta oraz przywraca środowisko deweloperskie do stanu absolutnie początkowego.
