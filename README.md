@@ -181,7 +181,7 @@ stanowi ostateczny, aplikacyjny dowód na poprawność wdrożenia założeń bez
 
 ---
 
-**Instrukcja uruchomienia w środowisku testowym**
+### Instrukcja uruchomienia w środowisku testowym
 
 Pliki z hasłami zostały wykluczone z repozytorium za pomocą .gitignore. Aby uruchomić i przetestować projekt lokalnie, należy ręcznie utworzyć strukturę sekretów:
 
