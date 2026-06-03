@@ -76,9 +76,13 @@ phpmyadmin   phpmyadmin:5.2.1      "/docker-entrypoint.…"   phpmyadmin   3 min
 
 ![Strona startowa - Port 4001](./screenshots/port_4001.png)
 
+---
+
 **Inicjalizacja testowej bazy danych (Port 6001):** Panel graficzny phpMyAdmin pod adresem `http://localhost:6001` pozwala na bezproblemowe zalogowanie z wykorzystaniem zmapowanego sekretu użytkownika. W systemie widoczna jest już automatycznie zainicjalizowana przez skrypt konfiguracyjny baza danych o nazwie testowa_baza_dominik. Serwer bazy identyfikuje się w panelu jako db via TCP/IP, z systemowym kodowaniem utf8mb4, działający pod odizolowanym adresem wewnętrznym sieci backend (np. dominik_user@172.20.0.4), co w pełni potwierdza poprawność komunikacji sieciowej i separacji stref.
 
 ![Panel phpMyAdmin - Port 6001](./screenshots/port_6001.png)
+
+---
 
 **4. Weryfikacja utworzonych sieci w silniku Dockera**
 
